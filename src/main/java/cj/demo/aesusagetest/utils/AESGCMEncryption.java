@@ -18,6 +18,13 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Base64;
 
+/*
+  https://csrc.nist.rip/groups/ST/toolkit/BCM/documents/proposedmodes/gcm/gcm-spec.pdf
+  Auth Data 1 as shown in the diagram is the optional "Additional Authentication Data". It's optional & need not be passed if your use-case doesn't need it.
+  You can use it for stuff which is not secret (like version number of your protocol, address of recipients or anything else)
+  The purpose of AAD is to send information along with the ciphertext that is not encrypted, but cannot be changed because the MAC is computed over the AAD and the ciphertext together.
+  For e.g. packet headers which are not secret but whose integrity you want to ensure can be there in AAD.
+*/
 public class AESGCMEncryption {
     private static final String ALGORITHM = "AES/GCM/NoPadding";
     private static final String FACTORY_INSTANCE = "PBKDF2WithHmacSHA256";
@@ -43,7 +50,7 @@ public class AESGCMEncryption {
         return new SecretKeySpec(factory.generateSecret(spec).getEncoded(), ALGORITHM_TYPE);
     }
 
-    public static String encrypt(String password, String plainMessage) throws Exception {
+    public static String encrypt(String plainMessage, String password) throws Exception {
         byte[] salt = getRandomNonce(SALT_LENGTH_BYTE);
         SecretKey secretKey = getSecretKey(password, salt);
 
@@ -62,7 +69,7 @@ public class AESGCMEncryption {
         return Base64.getEncoder().encodeToString(cipherByte);
     }
 
-    public static String decrypt(String password, String cipherMessage) throws Exception {
+    public static String decrypt(String cipherMessage, String password) throws Exception {
         byte[] decodedCipherByte = Base64.getDecoder().decode(cipherMessage.getBytes(UTF_8));
         ByteBuffer byteBuffer = ByteBuffer.wrap(decodedCipherByte);
 
